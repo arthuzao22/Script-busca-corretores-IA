@@ -2,7 +2,7 @@
 	CRIADO POR: ARTHUR REIS
 	DATA: 06/06/2024
 
-	SCRIPT GERADO PARA CRIAR UM RELATORIO DE CORREÇÃO DE IA. ONDE ELE VAI, ME TRAZER SE HÁ ALGUMA CORREÇÃO PENDENTE, A QTDE DE CORREÇÃO GERAL EM UM
+	SCRIPT GERADO PARA CRIAR UM RELATORIA DO CORREÇÃO DE IA. ONDE ELE VAI, ME TRAZER SE HÁ ALGUMA CORREÇÃO PENDENTE, A QTDE DE CORREÇÃO GERAL EM UM
 	DETERMINADO PERIODO, QTDE DE PALAVRAS, PSEUDOPALAVRA E TEXTO.
 */
 
@@ -46,6 +46,37 @@ FROM #TB_008
 WHERE CHARINDEX('-', REVERSE(CD_REGISTRO_CAED)) > 0 -- SE FOR MAIOR QUE ZERO QUER DIZ QUE O CARACTER '-' CONTEM NO CODIGO
 	  AND RIGHT(CD_REGISTRO_CAED, CHARINDEX('-', REVERSE(CD_REGISTRO_CAED)) - 1) = '0'
 
+/*----------------------------------------*/
+--IF OBJECT_ID('TEMPDB..#PPT') IS NOT NULL DROP TABLE #PPT
+--SELECT 
+--    SUBSTRING(
+--        cd_registro_caed, 
+--        CHARINDEX('-', cd_registro_caed) + 1, 
+--        CHARINDEX('-', cd_registro_caed, CHARINDEX('-', cd_registro_caed) + 1) - CHARINDEX('-', cd_registro_caed) - 1
+--    ) AS ValorDesejado,
+--	NU_SEQUENCIAL AS CD_NU_SEQUENCIAL
+--INTO #PPT
+--FROM #TB_008 WHERE CHARINDEX('-', REVERSE(CD_REGISTRO_CAED)) > 0 -- SE FOR MAIOR QUE ZERO QUER DIZ QUE O CARACTER '-' CONTEM NO CODIGO
+--	  AND RIGHT(CD_REGISTRO_CAED, CHARINDEX('-', REVERSE(CD_REGISTRO_CAED)) - 1) = '0'
+
+IF OBJECT_ID('TEMPDB..#PALAVRA') IS NOT NULL DROP TABLE #PALAVRA
+SELECT CD_CAMPO_001 AS PALAVRA
+INTO #PALAVRA
+FROM REPOSITORIO_MTD.[dbo].[MANTER_ARQ_IN_011_D_1308_20240315162710_000000086]
+WHERE CD_AVALIACAO IN (SELECT CD_AVALIACAO FROM #CD_AVALIACAO)
+
+IF OBJECT_ID('TEMPDB..#PSEUDOPALAVRA') IS NOT NULL DROP TABLE #PSEUDOPALAVRA
+SELECT CD_CAMPO_002 AS PSEUDOPALAVRA
+INTO #PSEUDOPALAVRA
+FROM REPOSITORIO_MTD.[dbo].[MANTER_ARQ_IN_011_D_1308_20240315162710_000000086]
+WHERE CD_AVALIACAO IN (SELECT CD_AVALIACAO FROM #CD_AVALIACAO)
+
+IF OBJECT_ID('TEMPDB..#TEXTO') IS NOT NULL DROP TABLE #TEXTO
+SELECT CD_CAMPO_003 AS TEXTO
+INTO #TEXTO
+FROM REPOSITORIO_MTD.[dbo].[MANTER_ARQ_IN_011_D_1308_20240315162710_000000086]
+WHERE CD_AVALIACAO IN (SELECT CD_AVALIACAO FROM #CD_AVALIACAO)
+
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*######--------------------------------------------------------------RELATORIOS-------------------------------------------------------------------##########*/
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------*/
@@ -61,30 +92,38 @@ WHERE
 /* -------------------------------------------------------------------------------------------------------------PARA VER O ULTIMO AUDIO MANDADO PARA CORREÇÃO E A QTDE*/
 DECLARE @data_inicio DATETIME;
 DECLARE @data_fim DATETIME;
--- MUDAR O PERIODO QUE VOCE QUER SABER DA QTDE DE AUDIOS FORAM ENVIADOS
+
+-- Definindo os valores para as variáveis
 SET @data_inicio = '2024-06-01 00:00:00';
 SET @data_fim = '2024-06-30 23:59:59';
-select 
-	count(dt_solicitação) as QTDE_DE_AUDIOS,
-	max(dt_solicitacao) as DATA_ULTIMO_DIA_MANDADO_PARA_IA
-from 
-	REPOSITORIO_PMCQD.csv.MANTER_1308_1853_PARC_AUDIOS_IA
-WHERE
-	dt_solicitação > @data_inicio AND dt_solicitação < @data_fim 
 
-/* -------------------------------------------------------------------------------------------------------------PARA VER PALAVRAS, PSEUDOPALAVRAS E TEXTO*/
+-- Consulta 1
 SELECT 
-    SUBSTRING(
-        cd_registro_caed, 
-        CHARINDEX('-', cd_registro_caed) + 1, 
-        CHARINDEX('-', cd_registro_caed, CHARINDEX('-', cd_registro_caed) + 1) - CHARINDEX('-', cd_registro_caed) - 1
-    ) AS ValorDesejado,
-	NU_SEQUENCIAL AS CD_NU_SEQUENCIAL
-INTO #PPT
-FROM #TB_008 WHERE CHARINDEX('-', REVERSE(CD_REGISTRO_CAED)) > 0 -- SE FOR MAIOR QUE ZERO QUER DIZ QUE O CARACTER '-' CONTEM NO CODIGO
-	  AND RIGHT(CD_REGISTRO_CAED, CHARINDEX('-', REVERSE(CD_REGISTRO_CAED)) - 1) = '0'
-GO
--- FALTA RELACIONAR O 011 PARA SABER QTS PALAVARAS PSEUDO E TEXTO TEMOS 
-SELECT * FROM
-REPOSITORIO_MTD.[dbo].[MANTER_ARQ_IN_011_D_1308_20240315162710_000000086]
-WHERE CD_AVALIACAO IN (SELECT CD_AVALIACAO FROM #CD_AVALIACAO)
+    COUNT(dt_solicitação) AS QTDE_DE_AUDIOS,
+    MAX(dt_solicitacao) AS DATA_ULTIMO_DIA_MANDADO_PARA_IA
+FROM 
+    REPOSITORIO_PMCQD.csv.MANTER_1308_1853_PARC_AUDIOS_IA
+WHERE
+    dt_solicitação > @data_inicio AND dt_solicitação < @data_fim;
+
+/* -------------------------------------------------------------------------------------------------------------PARA VER A QTDE DE PALAVRA, PSEUDOPALAVRA, TEXTO*/
+/*GERAR COM O BLOCO DE CODIGO ACIMA POR CAUSA DAS VARIAVEIS*/
+SELECT 'PALAVRA' AS TIPO, COUNT(CD_ITEM) AS CONTAGEM
+FROM REPOSITORIO_PMCQD.csv.MANTER_1308_1853_PARC_AUDIOS_IA 
+WHERE CD_ITEM IN (SELECT PALAVRA FROM #PALAVRA)
+AND dt_solicitação > @data_inicio AND dt_solicitação < @data_fim
+
+UNION ALL
+
+SELECT 'PSEUDOPALAVRA' AS TIPO, COUNT(CD_ITEM) AS CONTAGEM
+FROM REPOSITORIO_PMCQD.csv.MANTER_1308_1853_PARC_AUDIOS_IA 
+WHERE CD_ITEM IN (SELECT PSEUDOPALAVRA FROM #PSEUDOPALAVRA)
+AND dt_solicitação > @data_inicio AND dt_solicitação < @data_fim
+
+UNION ALL
+
+SELECT 'TEXTO' AS TIPO, COUNT(CD_ITEM) AS CONTAGEM
+FROM REPOSITORIO_PMCQD.csv.MANTER_1308_1853_PARC_AUDIOS_IA 
+WHERE CD_ITEM IN (SELECT TEXTO FROM #TEXTO)
+AND dt_solicitação > @data_inicio AND dt_solicitação < @data_fim;
+
