@@ -2,23 +2,23 @@
 	CRIADO POR: ARTHUR REIS
 	DATA: 06/06/2024
 
-	SCRIPT GERADO PARA CRIAR UM RELATORIA DO CORREÇÃO DE IA. ONDE ELE VAI, ME TRAZER SE HÁ ALGUMA CORREÇÃO PENDENTE, A QTDE DE CORREÇÃO GERAL EM UM
+	SCRIPT GERADO PARA CRIAR UM RELATORIO DE CORREÃ‡ÃƒO DE IA. ONDE ELE VAI, ME TRAZER SE HÃ ALGUMA CORREÃ‡ÃƒO PENDENTE, A QTDE DE CORREÃ‡ÃƒO GERAL EM UM
 	DETERMINADO PERIODO, QTDE DE PALAVRAS, PSEUDOPALAVRA E TEXTO.
 */
 
 /*----------------------------------------*/
-/*Bloco de código para retornar a tabela mais recente. */ 
-/*Alterar os parâmetros da procedure e o nome das tabela temporárias, se necessário, conforme tabela que deseja retornar.*/
+/*Bloco de cÃ³digo para retornar a tabela mais recente. */ 
+/*Alterar os parÃ¢metros da procedure e o nome das tabela temporÃ¡rias, se necessÃ¡rio, conforme tabela que deseja retornar.*/
 IF OBJECT_ID('tempdb..#PARAMETROS') IS NOT NULL DROP TABLE #PARAMETROS
 GO
 CREATE TABLE #PARAMETROS (CD_FONTE_REGISTRO VARCHAR(5) NOT NULL, CD_PROGRAMA_REGISTRO VARCHAR(5), CD_FORMULARIO VARCHAR(30) NOT NULL, CD_MUNICIPIO VARCHAR(50), CD_PROGRAMA_REGISTRO_DESTINO VARCHAR(5));
 INSERT INTO #PARAMETROS VALUES
 (
-'168' --Código fonto do programa.
-,'1308' --Código do Subprograma. Informe NULL para não utilizar
-,'M12.CONF1.001.F' --Código do formulário. -- não alterar
-,'NULL' --Código do Município 
-,NULL --Código do programa de destino. Informe NULL para não utilizar
+'168' --CÃ³digo fonto do programa.
+,'1308' --CÃ³digo do Subprograma. Informe NULL para nÃ£o utilizar
+,'M12.CONF1.001.F' --CÃ³digo do formulÃ¡rio. -- nÃ£o alterar
+,'NULL' --CÃ³digo do MunicÃ­pio 
+,NULL --CÃ³digo do programa de destino. Informe NULL para nÃ£o utilizar
 );
 IF OBJECT_ID('TEMPDB..#CD_AVALIACAO') IS NOT NULL DROP TABLE #CD_AVALIACAO
 GO
@@ -50,7 +50,7 @@ WHERE CHARINDEX('-', REVERSE(CD_REGISTRO_CAED)) > 0 -- SE FOR MAIOR QUE ZERO QUE
 /*######--------------------------------------------------------------RELATORIOS-------------------------------------------------------------------##########*/
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
-/* -------------------------------------------------------------------------------------------------------------PARA VER SE HÁ ALGUMA CORREÇÃO PENDENTE DA IA*/
+/* -------------------------------------------------------------------------------------------------------------PARA VER SE HÃ ALGUMA CORREÃ‡ÃƒO PENDENTE DA IA*/
 SELECT 
 	CD_REGISTRO_CAED
 FROM 
@@ -58,19 +58,19 @@ FROM
 WHERE 
 	CD_REGISTRO_CAED NOT IN(SELECT CD_NU_SEQUENCIAL from #SEQUENCIAL_COM_0);
 
-/* -------------------------------------------------------------------------------------------------------------PARA VER O ULTIMO AUDIO MANDADO PARA CORREÇÃO E A QTDE*/
+/* -------------------------------------------------------------------------------------------------------------PARA VER O ULTIMO AUDIO MANDADO PARA CORREÃ‡ÃƒO E A QTDE*/
 DECLARE @data_inicio DATETIME;
 DECLARE @data_fim DATETIME;
 -- MUDAR O PERIODO QUE VOCE QUER SABER DA QTDE DE AUDIOS FORAM ENVIADOS
 SET @data_inicio = '2024-06-01 00:00:00';
 SET @data_fim = '2024-06-30 23:59:59';
 select 
-	count(dt_solicitação) as QTDE_DE_AUDIOS,
+	count(dt_solicitaÃ§Ã£o) as QTDE_DE_AUDIOS,
 	max(dt_solicitacao) as DATA_ULTIMO_DIA_MANDADO_PARA_IA
 from 
 	REPOSITORIO_PMCQD.csv.MANTER_1308_1853_PARC_AUDIOS_IA
 WHERE
-	dt_solicitação > @data_inicio AND dt_solicitação < @data_fim 
+	dt_solicitaÃ§Ã£o > @data_inicio AND dt_solicitaÃ§Ã£o < @data_fim 
 
 /* -------------------------------------------------------------------------------------------------------------PARA VER PALAVRAS, PSEUDOPALAVRAS E TEXTO*/
 SELECT 
