@@ -26,6 +26,27 @@ CREATE TABLE #CD_AVALIACAO (CD_AVALIACAO VARCHAR(50) NOT NULL);
 INSERT INTO #CD_AVALIACAO VALUES
 ('18531801');
 
+IF OBJECT_ID('tempdb..#ESTADOS') IS NOT NULL DROP TABLE #ESTADOS 
+GO
+CREATE TABLE #ESTADOS (CD_ESTADO VARCHAR(20) NOT NULL);
+INSERT INTO #ESTADOS VALUES  
+ ('16') --Amapá (AP)	
+,('52') --Goiás (GO)	
+,('21') --Maranhão (MA)	
+,('22') --Piauí (PI)	
+,('51') --Mato Grosso (MT)	
+,('25') --Paraíba (PB)	
+,('43')	--RIO GRANDE DO SUL
+,('27') --Alagoas
+,('28') --Sergipe
+,('35') --São Paulo
+,('15') --Pará (PA)	
+,('41') --Paraná (PR)	
+,('26') --Pernambuco (PE)
+,('17') --TOCANTINS
+,('29') --BAHIA
+,('24') --RIO GRANDE DO NORTE
+
 DECLARE @FiltroTabela nvarchar(max) = 'CD_AVALIACAO IN (' + (SELECT STRING_AGG('''''' + CD_AVALIACAO + '''''',',') FROM #CD_AVALIACAO) + ')'
 DECLARE @DataHoraMaiorOuIgual varchar(10) = CONVERT(varchar(10), GETDATE(), 103) --Formato final precisa ser: DD/MM/YYYY
 DECLARE @cmd nvarchar(1000) = 'REPOSITORIO_PMCQD.dbo.opedpTabelaNome ''##TB_008'', ''dbo'', ''REPOSITORIO_mtd'', ' + (SELECT TOP 1 CD_PROGRAMA_REGISTRO FROM #PARAMETROS) + ', ''008'', ''' + @DataHoraMaiorOuIgual + ''', ''' + @FiltroTabela + ''''
@@ -47,17 +68,17 @@ WHERE CHARINDEX('-', REVERSE(CD_REGISTRO_CAED)) > 0 -- SE FOR MAIOR QUE ZERO QUE
 	  AND RIGHT(CD_REGISTRO_CAED, CHARINDEX('-', REVERSE(CD_REGISTRO_CAED)) - 1) = '0'
 
 /*----------------------------------------*/
---IF OBJECT_ID('TEMPDB..#PPT') IS NOT NULL DROP TABLE #PPT
---SELECT 
---    SUBSTRING(
---        cd_registro_caed, 
---        CHARINDEX('-', cd_registro_caed) + 1, 
---        CHARINDEX('-', cd_registro_caed, CHARINDEX('-', cd_registro_caed) + 1) - CHARINDEX('-', cd_registro_caed) - 1
---    ) AS ValorDesejado,
---	NU_SEQUENCIAL AS CD_NU_SEQUENCIAL
---INTO #PPT
---FROM #TB_008 WHERE CHARINDEX('-', REVERSE(CD_REGISTRO_CAED)) > 0 -- SE FOR MAIOR QUE ZERO QUER DIZ QUE O CARACTER '-' CONTEM NO CODIGO
---	  AND RIGHT(CD_REGISTRO_CAED, CHARINDEX('-', REVERSE(CD_REGISTRO_CAED)) - 1) = '0'
+IF OBJECT_ID('TEMPDB..#PPT') IS NOT NULL DROP TABLE #PPT
+SELECT 
+    SUBSTRING(
+        cd_registro_caed, 
+        CHARINDEX('-', cd_registro_caed) + 1, 
+        CHARINDEX('-', cd_registro_caed, CHARINDEX('-', cd_registro_caed) + 1) - CHARINDEX('-', cd_registro_caed) - 1
+    ) AS ValorDesejado,
+	NU_SEQUENCIAL AS CD_NU_SEQUENCIAL
+INTO #PPT
+FROM #TB_008 WHERE CHARINDEX('-', REVERSE(CD_REGISTRO_CAED)) > 0 -- SE FOR MAIOR QUE ZERO QUER DIZ QUE O CARACTER '-' CONTEM NO CODIGO
+	  AND RIGHT(CD_REGISTRO_CAED, CHARINDEX('-', REVERSE(CD_REGISTRO_CAED)) - 1) = '0'
 
 IF OBJECT_ID('TEMPDB..#PALAVRA') IS NOT NULL DROP TABLE #PALAVRA
 SELECT CD_CAMPO_001 AS PALAVRA
@@ -82,20 +103,24 @@ WHERE CD_AVALIACAO IN (SELECT CD_AVALIACAO FROM #CD_AVALIACAO)
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 /* -------------------------------------------------------------------------------------------------------------PARA VER SE HÁ ALGUMA CORREÇÃO PENDENTE DA IA*/
-SELECT 
-	CD_REGISTRO_CAED
+SELECT DISTINCT
+	A.CD_REGISTRO_CAED, A.CD_ITEM
 FROM 
-	REPOSITORIO_PMCQD.csv.MANTER_1308_1853_PARC_AUDIOS_IA -- AUDIOS QUE FORAM MANDADOS
-WHERE 
-	CD_REGISTRO_CAED NOT IN(SELECT CD_NU_SEQUENCIAL from #SEQUENCIAL_COM_0);
+	REPOSITORIO_PMCQD.csv.MANTER_1308_1853_PARC_AUDIOS_IA A -- AUDIOS QUE FORAM MANDADOS
+LEFT JOIN #PPT B
+	ON A.CD_REGISTRO_CAED = B.CD_NU_SEQUENCIAL
+	AND A.CD_ITEM = B.ValorDesejado
+WHERE B.CD_NU_SEQUENCIAL IS NULL
 
+--CD_REGISTRO_CAED NOT IN(SELECT top 10 * from #PPT)
+---- or cd_item NOT IN(SELECT ValorDesejado from #PPT)
 /* -------------------------------------------------------------------------------------------------------------PARA VER O ULTIMO AUDIO MANDADO PARA CORREÇÃO E A QTDE*/
 DECLARE @data_inicio DATETIME;
 DECLARE @data_fim DATETIME;
 
 -- Definindo os valores para as variáveis
-SET @data_inicio = '2024-06-01 00:00:00';
-SET @data_fim = '2024-06-30 23:59:59';
+SET @data_inicio = '2024-06-01 00:00:00'; -- > ATENÇÃO NAS DATAS
+SET @data_fim = '2024-06-30 23:59:59'; -- > ATENÇÃO NAS DATAS
 
 -- Consulta 1
 SELECT 
