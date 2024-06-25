@@ -2,23 +2,23 @@
 	CRIADO POR: ARTHUR REIS
 	DATA: 06/06/2024
 
-	SCRIPT GERADO PARA CRIAR UM RELATORIA DO CORREÇÃO DE IA. ONDE ELE VAI, ME TRAZER SE HÁ ALGUMA CORREÇÃO PENDENTE, A QTDE DE CORREÇÃO GERAL EM UM
+	SCRIPT GERADO PARA CRIAR UM RELATORIA DO CORREÃ‡ÃƒO DE IA. ONDE ELE VAI, ME TRAZER SE HÃ ALGUMA CORREÃ‡ÃƒO PENDENTE, A QTDE DE CORREÃ‡ÃƒO GERAL EM UM
 	DETERMINADO PERIODO, QTDE DE PALAVRAS, PSEUDOPALAVRA E TEXTO.
 */
 
 /*----------------------------------------*/
-/*Bloco de código para retornar a tabela mais recente. */ 
-/*Alterar os parâmetros da procedure e o nome das tabela temporárias, se necessário, conforme tabela que deseja retornar.*/
+/*Bloco de cÃ³digo para retornar a tabela mais recente. */ 
+/*Alterar os parÃ¢metros da procedure e o nome das tabela temporÃ¡rias, se necessÃ¡rio, conforme tabela que deseja retornar.*/
 IF OBJECT_ID('tempdb..#PARAMETROS') IS NOT NULL DROP TABLE #PARAMETROS
 GO
 CREATE TABLE #PARAMETROS (CD_FONTE_REGISTRO VARCHAR(5) NOT NULL, CD_PROGRAMA_REGISTRO VARCHAR(5), CD_FORMULARIO VARCHAR(30) NOT NULL, CD_MUNICIPIO VARCHAR(50), CD_PROGRAMA_REGISTRO_DESTINO VARCHAR(5));
 INSERT INTO #PARAMETROS VALUES
 (
-'168' --Código fonto do programa.
-,'1308' --Código do Subprograma. Informe NULL para não utilizar
-,'M12.CONF1.001.F' --Código do formulário. -- não alterar
-,'NULL' --Código do Município 
-,NULL --Código do programa de destino. Informe NULL para não utilizar
+'168' --CÃ³digo fonto do programa.
+,'1308' --CÃ³digo do Subprograma. Informe NULL para nÃ£o utilizar
+,'M12.CONF1.001.F' --CÃ³digo do formulÃ¡rio. -- nÃ£o alterar
+,'NULL' --CÃ³digo do MunicÃ­pio 
+,NULL --CÃ³digo do programa de destino. Informe NULL para nÃ£o utilizar
 );
 IF OBJECT_ID('TEMPDB..#CD_AVALIACAO') IS NOT NULL DROP TABLE #CD_AVALIACAO
 GO
@@ -30,18 +30,18 @@ IF OBJECT_ID('tempdb..#ESTADOS') IS NOT NULL DROP TABLE #ESTADOS
 GO
 CREATE TABLE #ESTADOS (CD_ESTADO VARCHAR(20) NOT NULL);
 INSERT INTO #ESTADOS VALUES  
- ('16') --Amapá (AP)	
-,('52') --Goiás (GO)	
-,('21') --Maranhão (MA)	
-,('22') --Piauí (PI)	
+ ('16') --AmapÃ¡ (AP)	
+,('52') --GoiÃ¡s (GO)	
+,('21') --MaranhÃ£o (MA)	
+,('22') --PiauÃ­ (PI)	
 ,('51') --Mato Grosso (MT)	
-,('25') --Paraíba (PB)	
+,('25') --ParaÃ­ba (PB)	
 ,('43')	--RIO GRANDE DO SUL
 ,('27') --Alagoas
 ,('28') --Sergipe
-,('35') --São Paulo
-,('15') --Pará (PA)	
-,('41') --Paraná (PR)	
+,('35') --SÃ£o Paulo
+,('15') --ParÃ¡ (PA)	
+,('41') --ParanÃ¡ (PR)	
 ,('26') --Pernambuco (PE)
 ,('17') --TOCANTINS
 ,('29') --BAHIA
@@ -83,72 +83,75 @@ FROM #TB_008 WHERE CHARINDEX('-', REVERSE(CD_REGISTRO_CAED)) > 0 -- SE FOR MAIOR
 IF OBJECT_ID('TEMPDB..#PALAVRA') IS NOT NULL DROP TABLE #PALAVRA
 SELECT CD_CAMPO_001 AS PALAVRA
 INTO #PALAVRA
-FROM REPOSITORIO_MTD.[dbo].[MANTER_ARQ_IN_011_D_1308_20240315162710_000000086]
+FROM PARC_2024_ENTRADA.dbo.ARQ_IN_011_D_1308_20240618162307_000000086
 WHERE CD_AVALIACAO IN (SELECT CD_AVALIACAO FROM #CD_AVALIACAO)
 
 IF OBJECT_ID('TEMPDB..#PSEUDOPALAVRA') IS NOT NULL DROP TABLE #PSEUDOPALAVRA
 SELECT CD_CAMPO_002 AS PSEUDOPALAVRA
 INTO #PSEUDOPALAVRA
-FROM REPOSITORIO_MTD.[dbo].[MANTER_ARQ_IN_011_D_1308_20240315162710_000000086]
+FROM PARC_2024_ENTRADA.dbo.ARQ_IN_011_D_1308_20240618162307_000000086
 WHERE CD_AVALIACAO IN (SELECT CD_AVALIACAO FROM #CD_AVALIACAO)
 
 IF OBJECT_ID('TEMPDB..#TEXTO') IS NOT NULL DROP TABLE #TEXTO
 SELECT CD_CAMPO_003 AS TEXTO
 INTO #TEXTO
-FROM REPOSITORIO_MTD.[dbo].[MANTER_ARQ_IN_011_D_1308_20240315162710_000000086]
+FROM PARC_2024_ENTRADA.dbo.ARQ_IN_011_D_1308_20240618162307_000000086
 WHERE CD_AVALIACAO IN (SELECT CD_AVALIACAO FROM #CD_AVALIACAO)
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*######--------------------------------------------------------------RELATORIOS-------------------------------------------------------------------##########*/
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
-/* -------------------------------------------------------------------------------------------------------------PARA VER SE HÁ ALGUMA CORREÇÃO PENDENTE DA IA*/
+/* -------------------------------------------------------------------------------------------------------------PARA VER SE HÃ ALGUMA CORREÃ‡ÃƒO PENDENTE DA IA*/
 SELECT DISTINCT
-	A.CD_REGISTRO_CAED, A.CD_ITEM
+	A.CD_REGISTRO_CAED, A.CD_ITEM, A.DT_SOLICITACAO
 FROM 
-	REPOSITORIO_PMCQD.csv.MANTER_1308_1853_PARC_AUDIOS_IA A -- AUDIOS QUE FORAM MANDADOS
+	PARC_2024_ENTRADA.dbo.MANTER_1308_1853_PARC_AUDIOS_IA A -- AUDIOS QUE FORAM MANDADOS
 LEFT JOIN #PPT B
 	ON A.CD_REGISTRO_CAED = B.CD_NU_SEQUENCIAL
 	AND A.CD_ITEM = B.ValorDesejado
-WHERE B.CD_NU_SEQUENCIAL IS NULL
+WHERE 
+--A.DT_SOLICITACAO >= '2024-06-01 00:00:00' AND -- CASO PRECISE DE BUSCAR POR ALGUMA DATA  
+B.CD_NU_SEQUENCIAL IS NULL
+ORDER BY A.DT_SOLICITACAO ASC
 
 --CD_REGISTRO_CAED NOT IN(SELECT top 10 * from #PPT)
 ---- or cd_item NOT IN(SELECT ValorDesejado from #PPT)
-/* -------------------------------------------------------------------------------------------------------------PARA VER O ULTIMO AUDIO MANDADO PARA CORREÇÃO E A QTDE*/
+/* -------------------------------------------------------------------------------------------------------------PARA VER O ULTIMO AUDIO MANDADO PARA CORREÃ‡ÃƒO E A QTDE*/
 DECLARE @data_inicio DATETIME;
 DECLARE @data_fim DATETIME;
 
--- Definindo os valores para as variáveis
-SET @data_inicio = '2024-06-01 00:00:00'; -- > ATENÇÃO NAS DATAS
-SET @data_fim = '2024-06-30 23:59:59'; -- > ATENÇÃO NAS DATAS
+-- Definindo os valores para as variÃ¡veis
+SET @data_inicio = '2024-06-01 00:00:00'; -- > ATENÃ‡ÃƒO NAS DATAS
+SET @data_fim = '2024-06-30 23:59:59'; -- > ATENÃ‡ÃƒO NAS DATAS
 
 -- Consulta 1
 SELECT 
-    COUNT(dt_solicitação) AS QTDE_DE_AUDIOS,
+    COUNT(dt_solicitaÃ§Ã£o) AS QTDE_DE_AUDIOS,
     MAX(dt_solicitacao) AS DATA_ULTIMO_DIA_MANDADO_PARA_IA
 FROM 
-    REPOSITORIO_PMCQD.csv.MANTER_1308_1853_PARC_AUDIOS_IA
+    PARC_2024_ENTRADA.dbo.MANTER_1308_1853_PARC_AUDIOS_IA
 WHERE
-    dt_solicitação > @data_inicio AND dt_solicitação < @data_fim;
+    dt_solicitaÃ§Ã£o > @data_inicio AND dt_solicitaÃ§Ã£o < @data_fim;
 
 /* -------------------------------------------------------------------------------------------------------------PARA VER A QTDE DE PALAVRA, PSEUDOPALAVRA, TEXTO*/
 /*GERAR COM O BLOCO DE CODIGO ACIMA POR CAUSA DAS VARIAVEIS*/
 SELECT 'PALAVRA' AS TIPO, COUNT(CD_ITEM) AS CONTAGEM
-FROM REPOSITORIO_PMCQD.csv.MANTER_1308_1853_PARC_AUDIOS_IA 
+FROM PARC_2024_ENTRADA.dbo.MANTER_1308_1853_PARC_AUDIOS_IA 
 WHERE CD_ITEM IN (SELECT PALAVRA FROM #PALAVRA)
-AND dt_solicitação > @data_inicio AND dt_solicitação < @data_fim
+AND dt_solicitaÃ§Ã£o > @data_inicio AND dt_solicitaÃ§Ã£o < @data_fim
 
 UNION ALL
 
 SELECT 'PSEUDOPALAVRA' AS TIPO, COUNT(CD_ITEM) AS CONTAGEM
-FROM REPOSITORIO_PMCQD.csv.MANTER_1308_1853_PARC_AUDIOS_IA 
+FROM PARC_2024_ENTRADA.dbo.MANTER_1308_1853_PARC_AUDIOS_IA 
 WHERE CD_ITEM IN (SELECT PSEUDOPALAVRA FROM #PSEUDOPALAVRA)
-AND dt_solicitação > @data_inicio AND dt_solicitação < @data_fim
+AND dt_solicitaÃ§Ã£o > @data_inicio AND dt_solicitaÃ§Ã£o < @data_fim
 
 UNION ALL
 
 SELECT 'TEXTO' AS TIPO, COUNT(CD_ITEM) AS CONTAGEM
-FROM REPOSITORIO_PMCQD.csv.MANTER_1308_1853_PARC_AUDIOS_IA 
+FROM PARC_2024_ENTRADA.dbo.MANTER_1308_1853_PARC_AUDIOS_IA 
 WHERE CD_ITEM IN (SELECT TEXTO FROM #TEXTO)
-AND dt_solicitação > @data_inicio AND dt_solicitação < @data_fim;
+AND dt_solicitaÃ§Ã£o > @data_inicio AND dt_solicitaÃ§Ã£o < @data_fim;
 
