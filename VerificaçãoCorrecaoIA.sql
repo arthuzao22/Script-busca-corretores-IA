@@ -30,22 +30,22 @@ IF OBJECT_ID('tempdb..#ESTADOS') IS NOT NULL DROP TABLE #ESTADOS
 GO
 CREATE TABLE #ESTADOS (CD_ESTADO VARCHAR(20) NOT NULL);
 INSERT INTO #ESTADOS VALUES  
- ('16') --Amapá (AP)	
-,('52') --Goiás (GO)	
-,('21') --Maranhão (MA)	
-,('22') --Piauí (PI)	
-,('51') --Mato Grosso (MT)	
-,('25') --Paraíba (PB)	
-,('43')	--RIO GRANDE DO SUL
-,('27') --Alagoas
-,('28') --Sergipe
-,('35') --São Paulo
-,('15') --Pará (PA)	
-,('41') --Paraná (PR)	
-,('26') --Pernambuco (PE)
-,('17') --TOCANTINS
-,('29') --BAHIA
-,('24') --RIO GRANDE DO NORTE
+-- ('16') --Amapá (AP)	
+--,('52') --Goiás (GO)	
+--,('21') --Maranhão (MA)	
+--,('22') --Piauí (PI)	
+--,('51') --Mato Grosso (MT)	
+--,('25') --Paraíba (PB)	
+--,('43')	--RIO GRANDE DO SUL
+--,('27') --Alagoas
+--,('28') --Sergipe
+--,('35') --São Paulo
+--,('15') --Pará (PA)	
+--,('41') --Paraná (PR)	
+--,('26') --Pernambuco (PE)
+--,('17') --TOCANTINS
+--,('29') --BAHIA
+('24') --RIO GRANDE DO NORTE
 
 DECLARE @FiltroTabela nvarchar(max) = 'CD_AVALIACAO IN (' + (SELECT STRING_AGG('''''' + CD_AVALIACAO + '''''',',') FROM #CD_AVALIACAO) + ')'
 DECLARE @DataHoraMaiorOuIgual varchar(10) = CONVERT(varchar(10), GETDATE(), 103) --Formato final precisa ser: DD/MM/YYYY
@@ -111,12 +111,20 @@ LEFT JOIN #PPT B
 	ON A.CD_REGISTRO_CAED = B.CD_NU_SEQUENCIAL
 	AND A.CD_ITEM = B.ValorDesejado
 WHERE 
---A.DT_SOLICITACAO >= '2024-06-01 00:00:00' AND -- CASO PRECISE DE BUSCAR POR ALGUMA DATA  
+A.DT_SOLICITACAO >= '2024-06-01 00:00:00' AND -- CASO PRECISE DE BUSCAR POR ALGUMA DATA  
 B.CD_NU_SEQUENCIAL IS NULL
 ORDER BY A.DT_SOLICITACAO ASC
 
 --CD_REGISTRO_CAED NOT IN(SELECT top 10 * from #PPT)
 ---- or cd_item NOT IN(SELECT ValorDesejado from #PPT)
+
+/* -------------------------------------------------------------------------------------------------------------QTDE DE AUDIO POR DATA*/
+SELECT DT_SOLICITACAO, COUNT(*) AS Quantidade_Audios_Enviados
+FROM PARC_2024_ENTRADA.dbo.MANTER_1308_1853_PARC_AUDIOS_IA
+WHERE DT_SOLICITACAO >= '2024-06-01 00:00:00'
+GROUP BY DT_SOLICITACAO
+ORDER BY DT_SOLICITACAO;
+
 /* -------------------------------------------------------------------------------------------------------------PARA VER O ULTIMO AUDIO MANDADO PARA CORREÇÃO E A QTDE*/
 DECLARE @data_inicio DATETIME;
 DECLARE @data_fim DATETIME;
@@ -154,4 +162,7 @@ SELECT 'TEXTO' AS TIPO, COUNT(CD_ITEM) AS CONTAGEM
 FROM PARC_2024_ENTRADA.dbo.MANTER_1308_1853_PARC_AUDIOS_IA 
 WHERE CD_ITEM IN (SELECT TEXTO FROM #TEXTO)
 AND dt_solicitação > @data_inicio AND dt_solicitação < @data_fim;
+
+
+
 
