@@ -9,9 +9,10 @@
 /*----------------------------------------*/
 /*Bloco de código para retornar a tabela mais recente. */ 
 /*Alterar os parâmetros da procedure e o nome das tabela temporárias, se necessário, conforme tabela que deseja retornar.*/
+
 IF OBJECT_ID('tempdb..#PARAMETROS') IS NOT NULL DROP TABLE #PARAMETROS
 GO
-CREATE TABLE #PARAMETROS (CD_FONTE_REGISTRO VARCHAR(5) NOT NULL, CD_PROGRAMA_REGISTRO VARCHAR(5), CD_FORMULARIO VARCHAR(30) NOT NULL, CD_MUNICIPIO VARCHAR(50), CD_PROGRAMA_REGISTRO_DESTINO VARCHAR(5));
+CREATE TABLE #PARAMETROS (CD_FONTE_REGISTRO VARCHAR(5) NOT NULL, CD_PROGRAMA_REGISTRO VARCHAR(5), CD_FORMULARIO VARCHAR(30) NOT NULL, CD_MUNICIPIO VARCHAR(50), CD_PROGRAMA_REGISTRO_DESTINO VARCHAR(5), DATA_INICIO VARCHAR(20), DATA_FIM VARCHAR(20));
 INSERT INTO #PARAMETROS VALUES
 (
 '168' --Código fonto do programa.
@@ -19,6 +20,8 @@ INSERT INTO #PARAMETROS VALUES
 ,'M12.CONF1.001.F' --Código do formulário. -- não alterar
 ,'NULL' --Código do Município 
 ,NULL --Código do programa de destino. Informe NULL para não utilizar
+,'2024-06-01 00:00:00'
+,'2024-06-30 00:00:00'
 );
 IF OBJECT_ID('TEMPDB..#CD_AVALIACAO') IS NOT NULL DROP TABLE #CD_AVALIACAO
 GO
@@ -111,7 +114,7 @@ LEFT JOIN #PPT B
 	ON A.CD_REGISTRO_CAED = B.CD_NU_SEQUENCIAL
 	AND A.CD_ITEM = B.ValorDesejado
 WHERE 
-A.DT_SOLICITACAO >= '2024-06-01 00:00:00' AND -- CASO PRECISE DE BUSCAR POR ALGUMA DATA  
+A.DT_SOLICITACAO >= (SELECT DATA_INICIO FROM #PARAMETROS) AND -- CASO PRECISE DE BUSCAR POR ALGUMA DATA  
 B.CD_NU_SEQUENCIAL IS NULL
 ORDER BY A.DT_SOLICITACAO ASC
 
@@ -121,18 +124,11 @@ ORDER BY A.DT_SOLICITACAO ASC
 /* -------------------------------------------------------------------------------------------------------------QTDE DE AUDIO POR DATA*/
 SELECT DT_SOLICITACAO, COUNT(*) AS Quantidade_Audios_Enviados
 FROM PARC_2024_ENTRADA.dbo.MANTER_1308_1853_PARC_AUDIOS_IA
-WHERE DT_SOLICITACAO >= '2024-06-01 00:00:00'
+WHERE DT_SOLICITACAO >= (SELECT DATA_INICIO FROM #PARAMETROS)
 GROUP BY DT_SOLICITACAO
 ORDER BY DT_SOLICITACAO;
 
 /* -------------------------------------------------------------------------------------------------------------PARA VER O ULTIMO AUDIO MANDADO PARA CORREÇÃO E A QTDE*/
-DECLARE @data_inicio DATETIME;
-DECLARE @data_fim DATETIME;
-
--- Definindo os valores para as variáveis
-SET @data_inicio = '2024-06-01 00:00:00'; -- > ATENÇÃO NAS DATAS
-SET @data_fim = '2024-06-30 23:59:59'; -- > ATENÇÃO NAS DATAS
-
 -- Consulta 1
 SELECT 
     COUNT(dt_solicitação) AS QTDE_DE_AUDIOS,
@@ -140,28 +136,32 @@ SELECT
 FROM 
     PARC_2024_ENTRADA.dbo.MANTER_1308_1853_PARC_AUDIOS_IA
 WHERE
-    dt_solicitação > @data_inicio AND dt_solicitação < @data_fim;
+    dt_solicitação >= (SELECT DATA_INICIO FROM #PARAMETROS) 
+	AND 
+	dt_solicitação <= (SELECT DATA_FIM FROM #PARAMETROS);
 
 /* -------------------------------------------------------------------------------------------------------------PARA VER A QTDE DE PALAVRA, PSEUDOPALAVRA, TEXTO*/
-/*GERAR COM O BLOCO DE CODIGO ACIMA POR CAUSA DAS VARIAVEIS*/
 SELECT 'PALAVRA' AS TIPO, COUNT(CD_ITEM) AS CONTAGEM
 FROM PARC_2024_ENTRADA.dbo.MANTER_1308_1853_PARC_AUDIOS_IA 
 WHERE CD_ITEM IN (SELECT PALAVRA FROM #PALAVRA)
-AND dt_solicitação > @data_inicio AND dt_solicitação < @data_fim
+AND dt_solicitação >= (SELECT DATA_INICIO FROM #PARAMETROS) 
+AND dt_solicitação <= (SELECT DATA_FIM FROM #PARAMETROS)
 
 UNION ALL
 
 SELECT 'PSEUDOPALAVRA' AS TIPO, COUNT(CD_ITEM) AS CONTAGEM
 FROM PARC_2024_ENTRADA.dbo.MANTER_1308_1853_PARC_AUDIOS_IA 
 WHERE CD_ITEM IN (SELECT PSEUDOPALAVRA FROM #PSEUDOPALAVRA)
-AND dt_solicitação > @data_inicio AND dt_solicitação < @data_fim
+AND dt_solicitação >= (SELECT DATA_INICIO FROM #PARAMETROS) 
+AND dt_solicitação <= (SELECT DATA_FIM FROM #PARAMETROS)
 
 UNION ALL
 
 SELECT 'TEXTO' AS TIPO, COUNT(CD_ITEM) AS CONTAGEM
 FROM PARC_2024_ENTRADA.dbo.MANTER_1308_1853_PARC_AUDIOS_IA 
 WHERE CD_ITEM IN (SELECT TEXTO FROM #TEXTO)
-AND dt_solicitação > @data_inicio AND dt_solicitação < @data_fim;
+AND dt_solicitação >= (SELECT DATA_INICIO FROM #PARAMETROS) 
+AND dt_solicitação <= (SELECT DATA_FIM FROM #PARAMETROS)
 
 
 
